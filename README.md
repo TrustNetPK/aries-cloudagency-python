@@ -38,7 +38,7 @@ wallet-key: walletsecret
 wallet-name: walletname
 ```
 
-Also see [Postman Documentation](https://documenter.getpostman.com/view/8801337/T17J9mzG)
+Also see [Postman Documentation.](https://documenter.getpostman.com/view/8801337/T17J9mzG)
 
 ## Security
 
