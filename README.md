@@ -60,4 +60,4 @@ ACAG-PY was developed in response the need dire of a multi-tenant-agency for mob
 
 ## License
 
-[Apache License Version 2.0](https://github.com/hyperledger/aries-cloudagent-python/blob/master/LICENSE)
+[Apache License Version 2.0](https://github.com/TrustNetPK/aries-cloudagency-python/blob/dev/LICENSE)
