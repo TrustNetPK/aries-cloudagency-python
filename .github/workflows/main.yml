@@ -1,0 +1,45 @@
+name: Aries Cloud Agency CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+        # checkout the repo
+        - name: 'Checkout GitHub Action'
+          uses: actions/checkout@master
+          
+        - name: 'Login via Azure CLI'
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+        - name: 'Build and push agency image'
+          uses: azure/docker-login@v1
+          env:
+            GITHUB_SHA: ${{ github.sha }}
+          with:
+            login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+            username: ${{ secrets.REGISTRY_USERNAME }}
+            password: ${{ secrets.REGISTRY_PASSWORD }}
+        - run: |
+            cd $GITHUB_WORKSPACE
+            docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/aries-cloud-agency-image:latest --build-arg AGENCY_INBOUND_PORT=7000 --build-arg AGENCY_ADMIN_PORT=2000 --build-arg AGENCY_ENDPOINT=${{ secrets.AGENCY_ENDPOINT }} --build-arg AGENCY_ADMIN_API_KEY=${{ secrets.AGENCY_ADMIN_API_KEY }} --build-arg GENESIS_URL=${{ secrets.GENESIS_URL }}
+            docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/aries-cloud-agency-image:latest
+
+        - name: 'Deploy to Azure Issuer Container Instance'
+          env:
+            AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+            REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+            REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+            REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+            GITHUB_SHA: ${{ github.sha }}
+          run: |
+            cd $GITHUB_WORKSPACE/
+            bash azure/DEPLOY_AGENCY.sh
+            
