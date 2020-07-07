@@ -38,6 +38,8 @@ wallet-key: walletsecret
 wallet-name: walletname
 ```
 
+Also see [Postman Documentation](https://documenter.getpostman.com/view/8801337/T17J9mzG)
+
 ## Security
 
 The administrative API exposed by the agent for the controller to use must be protected with an API key
