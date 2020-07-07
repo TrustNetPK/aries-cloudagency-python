@@ -3,7 +3,7 @@
 
 <!-- ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png) -->
 
-> An easy to use multi-tenant aries agency enabling multiple individual users to set up their personal agent wallets and communicate with any Aries cloud agent python (aca-py).
+> An easy to use multi-tenant aries agency enabling multiple individual users to set up their personal agent wallets and communicate with any Aries cloud agent python [(ACA-Py)](https://github.com/hyperledger/aries-cloudagent-python).
 
 Hyperledger Aries Cloud Agency Python (ACAG-Py) is a foundation for building self-sovereign identity (SSI) / decentralized identity services running in non-mobile environments using DIDcomm messaging, the did:peer DID method, and verifiable credentials. With ACAG-Py, SSI developers can focus on building services using familiar web and mobile development technologies instead of trying to learn the nuts and bolts of low-level SDKs.
 
@@ -51,7 +51,7 @@ Follows same api as ACA-PY with additional parameters in header see 'Usage' sect
 
 ## Credit
 
-ACAG-PY is based on ACA-Py and the initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).
+ACAG-PY is based on [ACA-Py](https://github.com/hyperledger/aries-cloudagent-python) and the initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).
 
 
 ## Disclaimer

@@ -1,6 +1,6 @@
-# Aries RFCs Supported in aries-cloudagent-python
+# Aries RFCs Supported in aries-cloudagency-python
 
-`aries-cloudagent-python` implements the specifications and protocols that are documented primarily in the [aries-rfcs](https://github.com/hyperledger/aries-rfcs). The following is a curated and generally up to date list of the RFCs that are supported by `aries-cloudagent-python`. We try to keep this list up to date, but if you have any questions, please contact us on the #aries channel on [Hyperledger Rocketchat](https://chat.hyperledger.org) or through an issue in this repo. The list is divided into the same two sections as the Aries RFCs-concepts and features. A third section describes some features of the agent that are not yet captured by RFCs, or that are described by [Indy HIPEs](https://github.com/hyperledger/indy-hipe).
+`aries-cloudagency-python` implements the specifications and protocols that are documented primarily in the [aries-rfcs](https://github.com/hyperledger/aries-rfcs). The following is a curated and generally up to date list of the RFCs that are supported by `aries-cloudagent-python`. We try to keep this list up to date, but if you have any questions, please contact us on the #aries channel on [Hyperledger Rocketchat](https://chat.hyperledger.org) or through an issue in this repo. The list is divided into the same two sections as the Aries RFCs-concepts and features. A third section describes some features of the agent that are not yet captured by RFCs, or that are described by [Indy HIPEs](https://github.com/hyperledger/indy-hipe).
 
 ## Aries RFC Concepts
 
