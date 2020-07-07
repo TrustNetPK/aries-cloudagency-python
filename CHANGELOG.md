@@ -1,3 +1,10 @@
+# 0.5.2-agency
+
+## July 6, 2020
+
+- Enable aca-py to create and manage multiple wallets.
+- Send / Receive connections, credentials and proofs for separate wallets.
+
 # 0.5.2
 
 ## June 26, 2020
