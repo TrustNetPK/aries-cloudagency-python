@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join('.', '')))
+
+from aries_cloudagency.agency.server import *
+
+init()
+
