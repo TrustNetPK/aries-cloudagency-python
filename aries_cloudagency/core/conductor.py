@@ -34,6 +34,8 @@ from ..utils.stats import Collector
 
 from .dispatcher import Dispatcher
 
+from ..config.ledger import agency_ledger_config
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -140,15 +142,19 @@ class Conductor:
 
         context = self.context
 
-        # Disabled for agency
+        # Disabling agent code for agency
         '''
         # Configure the wallet
         public_did = await wallet_config(context)
-
+        
         # Configure the ledger
         if not await ledger_config(context, public_did):
                     LOGGER.warning("No ledger configured")
         '''
+        # Configure ledger for Agency
+        if not await agency_ledger_config(context):
+            LOGGER.warning("No ledger configured")
+
         # Start up transports
         try:
             await self.inbound_transport_manager.start()

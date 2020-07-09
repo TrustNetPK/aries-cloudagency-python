@@ -6,7 +6,6 @@ ARG AGENCY_ADMIN_PORT
 ARG AGENCY_ADMIN_API_KEY
 ARG AGENCY_INBOUND_PORT
 ARG AGENCY_ENDPOINT
-ARG AGENCY_HOSTNAME
 ARG GENESIS_URL
 
 RUN pip install aries-cloudagent
@@ -19,8 +18,7 @@ ENV admin_api_key=$AGENCY_ADMIN_API_KEY \
     admin_port=$AGENCY_ADMIN_PORT \
     agency_endpoint=$AGENCY_ENDPOINT \
     inbound_port=$AGENCY_INBOUND_PORT \
-    genesis_url=$GENESIS_URL \
-    host_name=$AGENCY_HOSTNAME
+    genesis_url=$GENESIS_URL
 
 EXPOSE 7000 2000
 
