@@ -237,6 +237,8 @@ class AdminServer(BaseAdminServer):
                 self.context.injector.clear_binding(BaseStorage)
 
                 wallet_instance: BaseWallet = await agency_wallet.get(wallet_name, wallet_key)
+                if wallet_instance is None:
+                    raise web.HTTPUnauthorized()
                 self.context.injector.bind_instance(BaseWallet, wallet_instance)
 
                 storage = IndyStorage(wallet_instance)
