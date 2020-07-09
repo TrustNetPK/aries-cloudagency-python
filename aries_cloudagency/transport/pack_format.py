@@ -131,6 +131,8 @@ class PackWireFormat(BaseWireFormat):
             context.injector.clear_binding(BaseStorage)
 
             wallet_instance: BaseWallet = await agency_wallet.get(recipient_wallet_name, wallet_info['wallet_secret'])
+            if wallet_instance is None:
+                raise MessageParseError("Wallet doesn't exist in agency!")
             context.injector.bind_instance(BaseWallet, wallet_instance)
 
             storage = IndyStorage(wallet_instance)

@@ -45,6 +45,10 @@ The administrative API exposed by the agent for the controller to use must be pr
 `--admin-insecure-mode` command line arg. The latter should not be used other than in development if the API
 is not otherwise secured.
 
+
+> Storage and some other modules were modified in aca-py to create this multi-tenant agency. This particular code base requires security and storage improvements!
+
+
 ## API
 
 Follows same api as ACA-PY with additional parameters in header see 'Usage' section.
