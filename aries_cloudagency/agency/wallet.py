@@ -50,10 +50,13 @@ async def close(name, key):
 
 
 async def get(name, key):
-    wlt = open_wallets.get(name)
-    if wlt:
-        # print("Wallet already exist!")
-        return wlt
+    agency_storage = AgencyStorage()
+    wallet_info = await agency_storage.get_wallet(name, key)
+    if wallet_info is not None:
+        wlt = open_wallets.get(name)
+        if wlt:
+            return wlt
+        else:
+            return await open(name, key)
     else:
-        # print("Opening new wallet!")
-        return await open(name, key)
+        return None
