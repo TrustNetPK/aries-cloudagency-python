@@ -29,7 +29,7 @@ jobs:
             password: ${{ secrets.REGISTRY_PASSWORD }}
         - run: |
             cd $GITHUB_WORKSPACE
-            docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/aries-cloud-agency-image:latest --build-arg AGENCY_INBOUND_PORT=7000 --build-arg AGENCY_ADMIN_PORT=2000 --build-arg AGENCY_ENDPOINT=${{ secrets.AGENCY_ENDPOINT }} --build-arg AGENCY_ADMIN_API_KEY=${{ secrets.AGENCY_ADMIN_API_KEY }} --build-arg GENESIS_URL=${{ secrets.GENESIS_URL }} --build-arg AGENCY_HOSTNAME=${{ secrets.AGENCY_HOSTNAME }}
+            docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/aries-cloud-agency-image:latest --build-arg AGENCY_INBOUND_PORT=7000 --build-arg AGENCY_ADMIN_PORT=2000 --build-arg AGENCY_ENDPOINT=${{ secrets.AGENCY_ENDPOINT }} --build-arg AGENCY_ADMIN_API_KEY=${{ secrets.AGENCY_ADMIN_API_KEY }} --build-arg GENESIS_URL=${{ secrets.GENESIS_URL }}
             docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/aries-cloud-agency-image:latest
 
         - name: 'Deploy to Azure Agency Container Instance'

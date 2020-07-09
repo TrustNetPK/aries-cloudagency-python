@@ -334,7 +334,6 @@ class CredentialManager:
         cred_ex_record.credential_definition_id = cred_def_id
 
         await cred_ex_record.save(self.context, reason="receive credential offer")
-
         return cred_ex_record
 
     async def create_request(
@@ -352,75 +351,78 @@ class CredentialManager:
             A tuple (credential exchange record, credential request message)
 
         """
-        if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_RECEIVED:
-            raise CredentialManagerError(
-                f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                f"in {cred_ex_record.state} state "
-                f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
-            )
-
-        credential_definition_id = cred_ex_record.credential_definition_id
-        credential_offer = cred_ex_record.credential_offer
-
-        async def _create():
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                credential_definition = await ledger.get_credential_definition(
-                    credential_definition_id
+        try:
+            if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_RECEIVED:
+                raise CredentialManagerError(
+                    f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                    f"in {cred_ex_record.state} state "
+                    f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
                 )
 
-            holder: BaseHolder = await self.context.inject(BaseHolder)
-            request_json, metadata_json = await holder.create_credential_request(
-                credential_offer, credential_definition, holder_did
+            credential_definition_id = cred_ex_record.credential_definition_id
+            credential_offer = cred_ex_record.credential_offer
+
+            async def _create():
+                ledger: BaseLedger = await self.context.inject(BaseLedger)
+                async with ledger:
+                    credential_definition = await ledger.get_credential_definition(
+                        credential_definition_id
+                    )
+
+                holder: BaseHolder = await self.context.inject(BaseHolder)
+                request_json, metadata_json = await holder.create_credential_request(
+                    credential_offer, credential_definition, holder_did
+                )
+                return {
+                    "request": json.loads(request_json),
+                    "metadata": json.loads(metadata_json),
+                }
+
+            if cred_ex_record.credential_request:
+                self._logger.warning(
+                    "create_request called multiple times for v1.0 credential exchange: %s",
+                    cred_ex_record.credential_exchange_id,
+                )
+            else:
+                if "nonce" not in credential_offer:
+                    raise CredentialManagerError("Missing nonce in credential offer")
+                nonce = credential_offer["nonce"]
+                cache_key = (
+                    f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
+                )
+                cred_req_result = None
+                cache: BaseCache = await self.context.inject(BaseCache, required=False)
+                if cache:
+                    async with cache.acquire(cache_key) as entry:
+                        if entry.result:
+                            cred_req_result = entry.result
+                        else:
+                            cred_req_result = await _create()
+                            await entry.set_result(cred_req_result, 3600)
+                if not cred_req_result:
+                    cred_req_result = await _create()
+
+                (
+                    cred_ex_record.credential_request,
+                    cred_ex_record.credential_request_metadata,
+                ) = (cred_req_result["request"], cred_req_result["metadata"])
+
+            credential_request_message = CredentialRequest(
+                requests_attach=[
+                    CredentialRequest.wrap_indy_cred_req(cred_ex_record.credential_request)
+                ]
             )
-            return {
-                "request": json.loads(request_json),
-                "metadata": json.loads(metadata_json),
-            }
-
-        if cred_ex_record.credential_request:
-            self._logger.warning(
-                "create_request called multiple times for v1.0 credential exchange: %s",
-                cred_ex_record.credential_exchange_id,
+            credential_request_message._thread = {"thid": cred_ex_record.thread_id}
+            credential_request_message.assign_trace_decorator(
+                self.context.settings, cred_ex_record.trace
             )
-        else:
-            if "nonce" not in credential_offer:
-                raise CredentialManagerError("Missing nonce in credential offer")
-            nonce = credential_offer["nonce"]
-            cache_key = (
-                f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
-            )
-            cred_req_result = None
-            cache: BaseCache = await self.context.inject(BaseCache, required=False)
-            if cache:
-                async with cache.acquire(cache_key) as entry:
-                    if entry.result:
-                        cred_req_result = entry.result
-                    else:
-                        cred_req_result = await _create()
-                        await entry.set_result(cred_req_result, 3600)
-            if not cred_req_result:
-                cred_req_result = await _create()
 
-            (
-                cred_ex_record.credential_request,
-                cred_ex_record.credential_request_metadata,
-            ) = (cred_req_result["request"], cred_req_result["metadata"])
-
-        credential_request_message = CredentialRequest(
-            requests_attach=[
-                CredentialRequest.wrap_indy_cred_req(cred_ex_record.credential_request)
-            ]
-        )
-        credential_request_message._thread = {"thid": cred_ex_record.thread_id}
-        credential_request_message.assign_trace_decorator(
-            self.context.settings, cred_ex_record.trace
-        )
-
-        cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
-        await cred_ex_record.save(self.context, reason="create credential request")
-
-        return (cred_ex_record, credential_request_message)
+            cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
+            await cred_ex_record.save(self.context, reason="create credential request")
+            return (cred_ex_record, credential_request_message)
+        except Exception as ex:
+            print('EXCEPTION!')
+            print(ex)
 
     async def receive_request(self):
         """
