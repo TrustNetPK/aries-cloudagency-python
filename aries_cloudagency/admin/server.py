@@ -34,6 +34,7 @@ from ..wallet.base import BaseWallet
 from ..config.wallet import wallet_config
 from ..storage.base import BaseStorage
 from ..storage.indy import IndyStorage
+from ..config.ledger import ledger_config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -240,7 +241,7 @@ class AdminServer(BaseAdminServer):
 
                 storage = IndyStorage(wallet_instance)
                 self.context.injector.bind_instance(BaseStorage, storage)
-                await wallet_config(self.context, True)
+                await wallet_config(self.context)
                 app["request_context"] = self.context
             return await handler(request)
 

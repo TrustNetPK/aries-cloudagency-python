@@ -80,6 +80,51 @@ async def ledger_config(
     return True
 
 
+async def agency_ledger_config(
+    context: InjectionContext, provision: bool = False
+) -> bool:
+    """Perform Indy ledger configuration."""
+
+    # Fetch genesis transactions if necessary
+    if not context.settings.get("ledger.genesis_transactions"):
+        if context.settings.get("ledger.genesis_url"):
+            context.settings[
+                "ledger.genesis_transactions"
+            ] = await fetch_genesis_transactions(context.settings["ledger.genesis_url"])
+        elif context.settings.get("ledger.genesis_file"):
+            try:
+                genesis_path = context.settings["ledger.genesis_file"]
+                LOGGER.info("Reading genesis transactions from: %s", genesis_path)
+                with open(genesis_path, "r") as genesis_file:
+                    context.settings["ledger.genesis_transactions"] = genesis_file.read(
+                        -1
+                    )
+            except IOError as e:
+                raise ConfigError("Error reading genesis transactions") from e
+
+    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        LOGGER.info("Ledger instance not provided")
+        return False
+    elif ledger.LEDGER_TYPE != "indy":
+        LOGGER.info("Non-indy ledger provided")
+        return False
+
+    async with ledger:
+        # Check transaction author agreement acceptance
+        taa_info = await ledger.get_txn_author_agreement()
+        if taa_info["taa_required"]:
+            taa_accepted = await ledger.get_latest_txn_author_acceptance()
+            if (
+                not taa_accepted
+                or taa_info["taa_record"]["digest"] != taa_accepted["digest"]
+            ):
+                if not await accept_taa(ledger, taa_info, provision):
+                    return False
+
+    return True
+
+
 async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> bool:
     """Perform TAA acceptance."""
 

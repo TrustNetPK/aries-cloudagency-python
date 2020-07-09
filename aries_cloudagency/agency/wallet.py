@@ -52,8 +52,8 @@ async def close(name, key):
 async def get(name, key):
     wlt = open_wallets.get(name)
     if wlt:
-        print("Wallet already exist!")
+        # print("Wallet already exist!")
         return wlt
     else:
-        print("Opening new wallet!")
+        # print("Opening new wallet!")
         return await open(name, key)

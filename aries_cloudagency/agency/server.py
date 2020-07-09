@@ -21,7 +21,6 @@ admin_api_key = os.getenv("admin_api_key", "secret")
 admin_port = os.getenv("admin_port", "2000")
 agency_endpoint = os.getenv("agency_endpoint", "http://0.0.0.0")
 inbound_port = os.getenv("inbound_port", "7000")
-agency_hostname = os.getenv("host_name", "0.0.0.0")
 genesis_url = os.getenv("genesis_url", "http://greenlight.bcovrin.vonx.io/genesis")
 
 
@@ -32,10 +31,10 @@ async def start():
         contextBuilder.settings.set_default("admin.admin_insecure_mode", admin_insecure_mode)
     else:
         contextBuilder.settings.set_default("admin.admin_api_key", admin_api_key)
-    contextBuilder.settings.set_default("admin.host", agency_hostname)
+    contextBuilder.settings.set_default("admin.host", "0.0.0.0")
     contextBuilder.settings.set_default("admin.port", admin_port)
     contextBuilder.settings.set_default("admin.webhook_urls", "")
-    contextBuilder.settings.set_default("transport.inbound_configs", [["http", agency_hostname, inbound_port]])
+    contextBuilder.settings.set_default("transport.inbound_configs", [["http", "0.0.0.0", inbound_port]])
     contextBuilder.settings.set_default("transport.outbound_configs", ["http"])
 
     contextBuilder.settings.set_default("default_label", "Aries Cloud Agency")
