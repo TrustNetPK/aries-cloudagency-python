@@ -8,7 +8,7 @@
 Hyperledger Aries Cloud Agency Python (ACAG-Py) is a foundation for building self-sovereign identity (SSI) / decentralized identity services running in non-mobile environments using DIDcomm messaging, the did:peer DID method, and verifiable credentials. With ACAG-Py, SSI developers can focus on building services using familiar web and mobile development technologies instead of trying to learn the nuts and bolts of low-level SDKs.
 
 
-## Install
+## Run locally
 
 ACAG-Py can be run with docker without installation. Use the following command to install it locally:
 
