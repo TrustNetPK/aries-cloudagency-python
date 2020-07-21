@@ -20,8 +20,6 @@ ENV admin_api_key=$AGENCY_ADMIN_API_KEY \
     inbound_port=$AGENCY_INBOUND_PORT \
     genesis_url=$GENESIS_URL
 
-EXPOSE 7000 2000
-
 RUN chmod +x init-agency.sh
 
 CMD ["./init-agency.sh"]
