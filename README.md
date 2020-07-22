@@ -10,18 +10,9 @@ Hyperledger Aries Cloud Agency Python (ACAG-Py) is a foundation for building sel
 
 ## Run locally
 
-ACAG-Py can be run with docker without installation. Use the following command to install it locally:
+ACAG-Py can be run with docker without installation. It runs in combination with other agents to create a local workable enviornment.
 
-Get NGROK: https://ngrok.com/download
-
-and run
-> ./ngrok http 7500
-and use ngrok URL as AGENCY_ENDPOINT (for example: http://7b1fde64.ngrok.io)
-
-```bash
-docker build --build-arg AGENCY_INBOUND_PORT=7500 --build-arg AGENCY_ADMIN_PORT=2500 --build-arg AGENCY_ENDPOINT="http://7b1fde64.ngrok.io" --build-arg AGENCY_ADMIN_API_KEY="secret" --build-arg GENESIS_URL="http://greenlight.bcovrin.vonx.io/genesis" -f Dockerfile -t aries-cloud-agency . 
-docker run -itd -p 2500:2000 -p 7500:7500 aries-cloud-agency
-```
+See https://github.com/TrustNetPK/cov-id-cloud-agent for details.
 
 ## Usage
 
