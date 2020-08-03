@@ -35,7 +35,7 @@ class PackWireFormat(BaseWireFormat):
         self.task_queue: TaskQueue = None
 
     async def parse_message(
-            self, context: InjectionContext, message_body: Union[str, bytes],
+        self, context: InjectionContext, message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
@@ -76,7 +76,7 @@ class PackWireFormat(BaseWireFormat):
             try:
                 unpack = self.unpack(context, message_body, receipt)
                 message_json = await (
-                        self.task_queue and self.task_queue.run(unpack) or unpack
+                    self.task_queue and self.task_queue.run(unpack) or unpack
                 )
             except MessageParseError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
@@ -92,7 +92,7 @@ class PackWireFormat(BaseWireFormat):
         # parse thread ID
         thread_dec = message_dict.get("~thread")
         receipt.thread_id = (
-                thread_dec and thread_dec.get("thid") or message_dict.get("@id")
+            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
         )
 
         # handle transport decorator
@@ -105,10 +105,10 @@ class PackWireFormat(BaseWireFormat):
         return message_dict, receipt
 
     async def unpack(
-            self,
-            context: InjectionContext,
-            message_body: Union[str, bytes],
-            receipt: MessageReceipt,
+        self,
+        context: InjectionContext,
+        message_body: Union[str, bytes],
+        receipt: MessageReceipt,
     ):
         """Look up the wallet instance and perform the message unpack."""
         try:
@@ -150,12 +150,12 @@ class PackWireFormat(BaseWireFormat):
             raise MessageParseError("Message unpack failed") from e
 
     async def encode_message(
-            self,
-            context: InjectionContext,
-            message_json: Union[str, bytes],
-            recipient_keys: Sequence[str],
-            routing_keys: Sequence[str],
-            sender_key: str,
+        self,
+        context: InjectionContext,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
     ) -> Union[str, bytes]:
         """
         Encode an outgoing message for transport.
@@ -185,12 +185,12 @@ class PackWireFormat(BaseWireFormat):
         return message
 
     async def pack(
-            self,
-            context: InjectionContext,
-            message_json: Union[str, bytes],
-            recipient_keys: Sequence[str],
-            routing_keys: Sequence[str],
-            sender_key: str,
+        self,
+        context: InjectionContext,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
     ):
         """Look up the wallet instance and perform the message pack."""
         if not sender_key or not recipient_keys:

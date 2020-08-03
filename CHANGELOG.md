@@ -1,9 +1,15 @@
-# 0.5.2-agency
+# 0.5.3-AG
+
+## July 23, 2020
+
+- Compatibility with aca-py 0.5.3, [ACA-PY Changelog](https://github.com/hyperledger/aries-cloudagent-python/blob/0.5.3/CHANGELOG.md).
+
+# 0.5.2-AG
 
 ## July 6, 2020
 
 - Enable aca-py to create and manage multiple wallets.
-- Send / Receive connections, credentials and proofs for separate wallets.
+- Send / Receive connections, credentials and proofs for separate wallets on demand.
 
 # 0.5.2
 
