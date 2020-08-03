@@ -18,9 +18,9 @@ def str_to_bool(s):
 
 admin_insecure_mode = str_to_bool(os.getenv("admin_insecure_mode", "False").lower())
 admin_api_key = os.getenv("admin_api_key", "secret")
-admin_port = os.getenv("admin_port", "2000")
+admin_port = os.getenv("admin_port", "2500")
 agency_endpoint = os.getenv("agency_endpoint", "http://0.0.0.0")
-inbound_port = os.getenv("inbound_port", "7000")
+inbound_port = os.getenv("inbound_port", "7500")
 genesis_url = os.getenv("genesis_url", "http://greenlight.bcovrin.vonx.io/genesis")
 
 

@@ -8,14 +8,11 @@
 Hyperledger Aries Cloud Agency Python (ACAG-Py) is a foundation for building self-sovereign identity (SSI) / decentralized identity services running in non-mobile environments using DIDcomm messaging, the did:peer DID method, and verifiable credentials. With ACAG-Py, SSI developers can focus on building services using familiar web and mobile development technologies instead of trying to learn the nuts and bolts of low-level SDKs.
 
 
-## Install
+## Run locally
 
-ACAG-Py can be run with docker without installation. Use the following command to install it locally:
+ACAG-Py can be run with docker without installation. It runs in combination with other agents to create a local workable enviornment.
 
-```bash
-docker build --build-arg AGENCY_INBOUND_PORT=7000 --build-arg AGENCY_ADMIN_PORT=2000 --build-arg AGENCY_ENDPOINT="http://0.0.0.0" --build-arg AGENCY_ADMIN_API_KEY="secret" --build-arg GENESIS_URL="http://greenlight.bcovrin.vonx.io/genesis" -f Dockerfile -t aries-cloud-agency . 
-docker run -itd -p 2000:2000 -p 7000:7000 aries-cloud-agency
-```
+See https://github.com/TrustNetPK/cov-id-cloud-agent for details.
 
 ## Usage
 
@@ -37,8 +34,6 @@ X-API-Key: secret
 wallet-key: walletsecret
 wallet-name: walletname
 ```
-
-Also see [Postman Documentation.](https://documenter.getpostman.com/view/8801337/T17J9mzG)
 
 ## Security
 
@@ -66,4 +61,4 @@ ACAG-PY was developed in response the need dire of a multi-tenant-agency for mob
 
 ## License
 
-[Apache License Version 2.0](https://github.com/TrustNetPK/aries-cloudagency-python/blob/dev/LICENSE)
+[Apache License Version 2.0](https://github.com/hyperledger/aries-cloudagent-python/blob/master/LICENSE)

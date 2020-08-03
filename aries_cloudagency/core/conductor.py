@@ -99,6 +99,7 @@ class Conductor:
                     context,
                     self.outbound_message_router,
                     self.webhook_router,
+                    self.stop,
                     self.dispatcher.task_queue,
                     self.get_stats,
                 )
@@ -143,14 +144,14 @@ class Conductor:
         context = self.context
 
         # Disabling agent code for agency
-        '''
-        # Configure the wallet
-        public_did = await wallet_config(context)
-        
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-                    LOGGER.warning("No ledger configured")
-        '''
+
+        # # Configure the wallet
+        # public_did = await wallet_config(context)
+        #
+        # # Configure the ledger
+        # if not await ledger_config(context, public_did):
+        #     LOGGER.warning("No ledger configured")
+
         # Configure ledger for Agency
         if not await agency_ledger_config(context):
             LOGGER.warning("No ledger configured")

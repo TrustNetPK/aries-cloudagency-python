@@ -1,3 +1,3 @@
 """Library version information."""
 
-__version__ = "0.5.2-agency"
+__version__ = "0.5.3-ag"
