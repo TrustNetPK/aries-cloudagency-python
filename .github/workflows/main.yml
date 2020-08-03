@@ -4,7 +4,7 @@ name: Aries Cloud Agency CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ deploy ]
 
 jobs:
     build-and-deploy:
