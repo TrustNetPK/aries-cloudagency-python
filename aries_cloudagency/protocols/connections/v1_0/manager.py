@@ -295,7 +295,6 @@ class ConnectionManager:
 
         # Store connection record for agency recipient
         agency_storage = AgencyStorage()
-
         await agency_storage.store_recipient(wallet.name, my_info.verkey, my_info.did)
 
         # Create connection request message

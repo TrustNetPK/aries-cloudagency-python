@@ -36,6 +36,7 @@ from ..storage.base import BaseStorage
 from ..storage.indy import IndyStorage
 from ..config.ledger import ledger_config
 
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -51,11 +52,23 @@ class AdminStatusSchema(Schema):
     """Schema for the status endpoint."""
 
 
+class AdminStatusLivelinessSchema(Schema):
+    """Schema for the liveliness endpoint."""
+
+    alive = fields.Boolean(description="Liveliness status", example=True)
+
+
+class AdminStatusReadinessSchema(Schema):
+    """Schema for the liveliness endpoint."""
+
+    ready = fields.Boolean(description="Readiness status", example=True)
+
+
 class AdminResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
     def __init__(
-            self, context: InjectionContext, send: Coroutine, webhook: Coroutine, **kwargs
+        self, context: InjectionContext, send: Coroutine, webhook: Coroutine, **kwargs,
     ):
         """
         Initialize an instance of `AdminResponder`.
@@ -93,10 +106,10 @@ class WebhookTarget:
     """Class for managing webhook target information."""
 
     def __init__(
-            self,
-            endpoint: str,
-            topic_filter: Sequence[str] = None,
-            max_attempts: int = None,
+        self,
+        endpoint: str,
+        topic_filter: Sequence[str] = None,
+        max_attempts: int = None,
     ):
         """Initialize the webhook target."""
         self.endpoint = endpoint
@@ -118,18 +131,45 @@ class WebhookTarget:
         self._topic_filter = filter
 
 
+@web.middleware
+async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Only continue if application is ready to take work."""
+
+    if str(request.rel_url).rstrip("/") in (
+        "/status/live",
+        "/status/ready",
+    ) or request.app._state.get("ready"):
+        return await handler(request)
+
+    raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
+
+
+@web.middleware
+async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Show request detail in debug log."""
+
+    if LOGGER.isEnabledFor(logging.DEBUG):
+        LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
+        LOGGER.debug(f"Match info: {request.match_info}")
+        body = await request.text()
+        LOGGER.debug(f"Body: {body}")
+
+    return await handler(request)
+
+
 class AdminServer(BaseAdminServer):
     """Admin HTTP server class."""
 
     def __init__(
-            self,
-            host: str,
-            port: int,
-            context: InjectionContext,
-            outbound_message_router: Coroutine,
-            webhook_router: Callable,
-            task_queue: TaskQueue = None,
-            conductor_stats: Coroutine = None,
+        self,
+        host: str,
+        port: int,
+        context: InjectionContext,
+        outbound_message_router: Coroutine,
+        webhook_router: Callable,
+        conductor_stop: Coroutine,
+        task_queue: TaskQueue = None,
+        conductor_stats: Coroutine = None,
     ):
         """
         Initialize an AdminServer instance.
@@ -140,6 +180,7 @@ class AdminServer(BaseAdminServer):
             context: The application context instance
             outbound_message_router: Coroutine for delivering outbound messages
             webhook_router: Callable for delivering webhooks
+            conductor_stop: Conductor (graceful) stop for shutdown API call
             task_queue: An optional task queue for handlers
         """
         self.app = None
@@ -149,6 +190,7 @@ class AdminServer(BaseAdminServer):
         )
         self.host = host
         self.port = port
+        self.conductor_stop = conductor_stop
         self.conductor_stats = conductor_stats
         self.loaded_modules = []
         self.task_queue = task_queue
@@ -159,14 +201,14 @@ class AdminServer(BaseAdminServer):
 
         self.context = context.start_scope("admin")
         self.responder = AdminResponder(
-            self.context, outbound_message_router, self.send_webhook
+            self.context, outbound_message_router, self.send_webhook,
         )
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [validation_middleware]
+        middlewares = [ready_middleware, debug_middleware, validation_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
@@ -225,22 +267,17 @@ class AdminServer(BaseAdminServer):
         @web.middleware
         async def agency_middleware(request, handler):
             omit_list = ["/create_wallet"]
-
             if request.rel_url.path not in omit_list:
                 wallet_key = request.headers.get("wallet-key")
                 wallet_name = request.headers.get("wallet-name")
-
                 self.context.settings.set_value("wallet.key", wallet_key)
                 self.context.settings.set_value("wallet.name", wallet_name)
-
                 self.context.injector.clear_binding(BaseWallet)
                 self.context.injector.clear_binding(BaseStorage)
-
                 wallet_instance: BaseWallet = await agency_wallet.get(wallet_name, wallet_key)
                 if wallet_instance is None:
                     raise web.HTTPUnauthorized()
                 self.context.injector.bind_instance(BaseWallet, wallet_instance)
-
                 storage = IndyStorage(wallet_instance)
                 self.context.injector.bind_instance(BaseStorage, storage)
                 await wallet_config(self.context)
@@ -255,6 +292,9 @@ class AdminServer(BaseAdminServer):
                 web.get("/plugins", self.plugins_handler, allow_head=False),
                 web.get("/status", self.status_handler, allow_head=False),
                 web.post("/status/reset", self.status_reset_handler),
+                web.get("/status/live", self.liveliness_handler, allow_head=False),
+                web.get("/status/ready", self.readiness_handler, allow_head=False),
+                web.get("/shutdown", self.shutdown_handler, allow_head=False),
                 web.get("/ws", self.websocket_handler, allow_head=False),
                 web.post('/create_wallet', agency_wallet.create),
             ]
@@ -307,10 +347,20 @@ class AdminServer(BaseAdminServer):
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
+        # order tags alphabetically, parameters deterministically and pythonically
+        swagger_dict = self.app._state["swagger_dict"]
+        swagger_dict.get("tags", []).sort(key=lambda t: t["name"])
+        for path in swagger_dict["paths"].values():
+            for method_spec in path.values():
+                method_spec["parameters"].sort(
+                    key=lambda p: (p["in"], not p["required"], p["name"])
+                )
+
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
         try:
             await self.site.start()
+            self.app._state["ready"] = True
         except OSError:
             raise AdminSetupError(
                 "Unable to start webserver with host "
@@ -319,6 +369,7 @@ class AdminServer(BaseAdminServer):
 
     async def stop(self) -> None:
         """Stop the webserver."""
+        self.app._state["ready"] = False  # in case call does not come through OpenAPI
         for queue in self.websocket_queues.values():
             queue.stop()
         if self.site:
@@ -367,6 +418,7 @@ class AdminServer(BaseAdminServer):
 
         """
         status = {"version": __version__}
+        status["label"] = self.context.settings.get("default_label")
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
@@ -395,6 +447,54 @@ class AdminServer(BaseAdminServer):
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""
         raise web.HTTPFound("/api/doc")
+
+    @docs(tags=["server"], summary="Liveliness check")
+    @response_schema(AdminStatusLivelinessSchema(), 200)
+    async def liveliness_handler(self, request: web.BaseRequest):
+        """
+        Request handler for liveliness check.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response, always indicating True
+
+        """
+        return web.json_response({"alive": True})
+
+    @docs(tags=["server"], summary="Readiness check")
+    @response_schema(AdminStatusReadinessSchema(), 200)
+    async def readiness_handler(self, request: web.BaseRequest):
+        """
+        Request handler for liveliness check.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response, indicating readiness for further calls
+
+        """
+        return web.json_response({"ready": self.app._state["ready"]})
+
+    @docs(tags=["server"], summary="Shut down server")
+    async def shutdown_handler(self, request: web.BaseRequest):
+        """
+        Request handler for server shutdown.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response (empty production)
+
+        """
+        self.app._state["ready"] = False
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self.conductor_stop(), loop=loop)
+
+        return web.json_response({})
 
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
@@ -477,6 +577,7 @@ class AdminServer(BaseAdminServer):
                             if msg:
                                 await ws.send_json(msg)
                             send = loop.create_task(queue.dequeue(timeout=5.0))
+
                 except asyncio.CancelledError:
                     closed = True
 
@@ -491,10 +592,10 @@ class AdminServer(BaseAdminServer):
         return ws
 
     def add_webhook_target(
-            self,
-            target_url: str,
-            topic_filter: Sequence[str] = None,
-            max_attempts: int = None,
+        self,
+        target_url: str,
+        topic_filter: Sequence[str] = None,
+        max_attempts: int = None,
     ):
         """Add a webhook target."""
         self.webhook_targets[target_url] = WebhookTarget(
