@@ -198,6 +198,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_targets = {}
         self.websocket_queues = {}
         self.site = None
+        self.outbound_message_router_obj = outbound_message_router
 
         self.context = context.start_scope("admin")
         self.responder = AdminResponder(
@@ -270,18 +271,45 @@ class AdminServer(BaseAdminServer):
             if request.rel_url.path not in omit_list:
                 wallet_key = request.headers.get("wallet-key")
                 wallet_name = request.headers.get("wallet-name")
-                self.context.settings.set_value("wallet.key", wallet_key)
-                self.context.settings.set_value("wallet.name", wallet_name)
-                self.context.injector.clear_binding(BaseWallet)
-                self.context.injector.clear_binding(BaseStorage)
+
+                # self.context.injector.clear_binding(BaseWallet)
+                # self.context.injector.clear_binding(BaseStorage)
+                # self.context.injector.clear_binding(BaseResponder)
+
+                ijContext: InjectionContext = self.context.start_scope(wallet_name, self.context.settings.items())
+                ijContext.settings.set_value("wallet.name", wallet_name)
+                ijContext.injector_for_scope(wallet_name).clear_binding(BaseWallet)
+                ijContext.injector_for_scope(wallet_name).clear_binding(BaseStorage)
+
+                ijContext.injector_for_scope(wallet_name).clear_binding(BaseResponder)
+                responder = AdminResponder(
+                    ijContext, self.outbound_message_router_obj, self.send_webhook,
+                )
+                ijContext.injector_for_scope(wallet_name).bind_instance(BaseResponder, responder)
+
+
                 wallet_instance: BaseWallet = await agency_wallet.get(wallet_name, wallet_key)
                 if wallet_instance is None:
                     raise web.HTTPUnauthorized()
-                self.context.injector.bind_instance(BaseWallet, wallet_instance)
+                ijContext.injector_for_scope(wallet_name).bind_instance(BaseWallet, wallet_instance)
                 storage = IndyStorage(wallet_instance)
-                self.context.injector.bind_instance(BaseStorage, storage)
-                await wallet_config(self.context)
-                app["request_context"] = self.context
+                ijContext.injector_for_scope(wallet_name).bind_instance(BaseStorage, storage)
+                await wallet_config(ijContext)
+
+                app["request_context"] = ijContext
+                app["outbound_message_router"] = responder.send
+
+                # self.context.settings.set_value("wallet.name", wallet_name)
+                # self.context.injector.clear_binding(BaseWallet)
+                # self.context.injector.clear_binding(BaseStorage)
+                # wallet_instance: BaseWallet = await agency_wallet.get(wallet_name, wallet_key)
+                # if wallet_instance is None:
+                #     raise web.HTTPUnauthorized()
+                # self.context.injector.bind_instance(BaseWallet, wallet_instance)
+                # storage = IndyStorage(wallet_instance)
+                # self.context.injector.bind_instance(BaseStorage, storage)
+                # await wallet_config(self.context)
+                # app["request_context"] = self.context
             return await handler(request)
 
         app.middlewares.append(agency_middleware)

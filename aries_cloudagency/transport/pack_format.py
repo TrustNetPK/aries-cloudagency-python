@@ -126,6 +126,11 @@ class PackWireFormat(BaseWireFormat):
             recipient_info = await agency_storage.get_recipient(kid)
             recipient_wallet_name = recipient_info['wallet_name']
 
+            ijContext: InjectionContext = context.start_scope(recipient_wallet_name, context.settings.items())
+            ijContext.settings.set_value("wallet.name", recipient_wallet_name)
+            ijContext.injector_for_scope(recipient_wallet_name).clear_binding(BaseWallet)
+            ijContext.injector_for_scope(recipient_wallet_name).clear_binding(BaseStorage)
+
             wallet_info = await agency_storage.get_wallet_without_secret(recipient_wallet_name)
             context.injector.clear_binding(BaseWallet)
             context.injector.clear_binding(BaseStorage)
@@ -133,12 +138,26 @@ class PackWireFormat(BaseWireFormat):
             wallet_instance: BaseWallet = await agency_wallet.get(recipient_wallet_name, wallet_info['wallet_secret'])
             if wallet_instance is None:
                 raise MessageParseError("Wallet doesn't exist in agency!")
-            context.injector.bind_instance(BaseWallet, wallet_instance)
+            ijContext.injector_for_scope(recipient_wallet_name).bind_instance(BaseWallet, wallet_instance)
 
             storage = IndyStorage(wallet_instance)
-            context.injector.bind_instance(BaseStorage, storage)
+            ijContext.injector_for_scope(recipient_wallet_name).bind_instance(BaseStorage, storage)
 
-            wallet: BaseWallet = await context.inject(BaseWallet)
+            wallet: BaseWallet = await ijContext.injector_for_scope(recipient_wallet_name).inject(BaseWallet)
+
+            # wallet_info = await agency_storage.get_wallet_without_secret(recipient_wallet_name)
+            # context.injector.clear_binding(BaseWallet)
+            # context.injector.clear_binding(BaseStorage)
+            #
+            # wallet_instance: BaseWallet = await agency_wallet.get(recipient_wallet_name, wallet_info['wallet_secret'])
+            # if wallet_instance is None:
+            #     raise MessageParseError("Wallet doesn't exist in agency!")
+            # context.injector.bind_instance(BaseWallet, wallet_instance)
+            #
+            # storage = IndyStorage(wallet_instance)
+            # context.injector.bind_instance(BaseStorage, storage)
+            #
+            # wallet: BaseWallet = await context.inject(BaseWallet)
         except InjectorError:
             raise MessageParseError("Wallet not defined in request context")
 
