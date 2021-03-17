@@ -8,7 +8,7 @@ ARG AGENCY_INBOUND_PORT
 ARG AGENCY_ENDPOINT
 ARG GENESIS_URL
 
-RUN pip install aries-cloudagent
+RUN pip install aries-cloudagent==0.5.3
 RUN pip install pickledb
 
 WORKDIR /src
